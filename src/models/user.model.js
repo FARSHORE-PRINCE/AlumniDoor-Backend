@@ -31,7 +31,7 @@ const userSchema = new Schema({
     },
     profilePhoto: {
         type: String,// use a server [by multer only], not a third party service like Cloudinary url.
-        required: true,
+        //required: true,
 
     },
     degree: {
@@ -77,7 +77,8 @@ userSchema.pre("save", async function (next) {
   
     this.password = await bcrypt.hash(this.password, 10);
     // Hash the password with bcrypt before saving (10 = salt rounds for security)
-  
+
+
     next(); // Move on to the next middleware or save process
   });
   
