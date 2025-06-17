@@ -167,7 +167,7 @@ const loginUser = asyncHandler(async (req, res)=>{
     }
 
     // Generate new access & refresh tokens for the user
-    const {accessToken, refreshToken} = generateAccessAndRefreshTokens(user._id);
+    const {accessToken, refreshToken} = await generateAccessAndRefreshTokens(user._id);
 
     const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
     // Fetch user details but exclude sensitive fields (password, refresh token)

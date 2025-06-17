@@ -12,7 +12,7 @@ import jwt from "jsonwebtoken";
   - If the token is missing or invalid, it throws an error.
 */
 
-export const verifyJWT = asyncHandler(async (req, res, next)=>{
+export const verifyJWT = asyncHandler(async (req, _, next)=>{
   
 try {
     /*
@@ -23,6 +23,7 @@ try {
       - If it's in the header, we remove the "Bearer " part to get the actual token.
     */
        const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "")
+       console.log("Extracted Token:", token);
             
        //console.log(token);
     

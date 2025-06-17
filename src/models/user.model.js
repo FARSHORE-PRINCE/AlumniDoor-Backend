@@ -95,7 +95,6 @@ userSchema.pre("save", async function (next) {
       {
         _id: this._id, // Include user ID in the token payload
         email: this.email, // Include email (useful for quick identification)
-        username: this.username, // Include username
         fullName: this.fullName, // Include full name
       },
       process.env.ACCESS_TOKEN_SECRET, // Secret key for signing the token
