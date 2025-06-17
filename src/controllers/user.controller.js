@@ -212,6 +212,18 @@ const loginUser = asyncHandler(async (req, res)=>{
 });
 
 
+const logoutUser = asyncHandler(async (req, res)=>{
+// Algorithm:
+    // req -> user info (from authentication middleware)
+    // find user by id
+    // remove refreshToken field from user document
+    // set cookie options (httpOnly, secure)
+    // clear accessToken and refreshToken cookies
+    // send success response (User logged Out)
+    
+});
+
+
 
 export { 
     registerUser,
