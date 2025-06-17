@@ -3,6 +3,41 @@ import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js"
 
+const generateAccessAndRefreshTokens = async(userId)=>{
+    // Function to generate new access & refresh tokens for a user
+try {
+        const user = await User.findById(userId);
+         // Find the user in the database using their ID
+
+        const accessToken = user.generateAccessToken();
+        // Generate a new access token
+
+        const refreshToken= user.generateRefreshToken();
+        // Generate a new refresh token
+
+    
+        user.refreshToken = refreshToken; // Store the refresh token in the database
+        await user.save({ validateBeforeSave: false });
+        // Save the user without triggering other validation rules
+
+    
+        return { accessToken, refreshToken }; // Return the tokens
+} catch (error) {
+    throw new ApiError(500, "Something went wrong while generating referesh and access token");
+}
+  /* 
+
+  👉 Why do we generate access and refresh tokens separately?
+   - Access tokens expire quickly for security.
+   - Refresh tokens last longer and are used to get new access tokens without logging in again.
+
+   👉 Why do we set validateBeforeSave: false?
+   - To prevent Mongoose from running unnecessary validations when updating only the refresh token.
+*/
+}
+
+
+
 
 
 // asyncHandler makes sure we catch errors without breaking the whole app
@@ -96,5 +131,89 @@ TL;DR of what’s happening here:
 } );
 
 
+  // This function handles user login requests
+  // It checks user credentials and returns access & refresh tokens
+const loginUser = asyncHandler(async (req, res)=>{
+// Algorithm:
+    // req body -> data
+    // email
+    //find the user
+    //password check
+    //access and referesh token
+    //send cookie
 
-export { registerUser }
+    const {email, password} = req.body; // Extract email, username & password from request
+    console.log(email); // Debugging: logs email to see if it was received
+
+    if (!email) {
+    // If email is not provided, throw an error
+        throw new ApiError(400, "Email is required");
+    }
+
+    const user = await User.findOne({ email })// Search for user by email
+
+    if (!user) {
+    // If user isn't found, send a 404 error
+        throw new ApiError(404, "User does not exist");
+    }
+    
+    const isPasswordValid = await user.isPasswordCorrect(password);
+     // Check if provided password matches the stored hashed password
+
+
+    if (!isPasswordValid) {
+    // If password is wrong, send a 401 error (Unauthorized)
+        throw new ApiError(401, "Invalid user credentials")
+    }
+
+    // Generate new access & refresh tokens for the user
+    const {accessToken, refreshToken} = generateAccessAndRefreshTokens(user._id);
+
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
+    // Fetch user details but exclude sensitive fields (password, refresh token)
+
+    const options = {
+        httpOnly: true,// Prevents JavaScript access to cookies for security or simply users cannot modify the cookies when we set this flag
+        secure: true// Ensures cookies are sent only over HTTPS
+
+    }
+
+    return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)// Store access token in HTTP-only cookie
+    .cookie("refreshToken", refreshToken, options)// Store refresh token in HTTP-only cookie
+    .json(
+        new ApiResponse(
+            200, 
+            {
+                user: loggedInUser, accessToken, refreshToken
+            },
+            "User logged In Successfully"
+        )
+    )
+        /*
+        👉 Why do we check for both email & username?
+        - Users can log in using either, so we search by both.
+
+        👉 Why do we exclude password & refreshToken from the response?
+        - To prevent sensitive information from being exposed in API responses.
+
+        👉 Why do we hash passwords & check using bcrypt?
+        - Storing plain text passwords is insecure. bcrypt allows safe comparisons.
+
+        👉 Why do we generate access & refresh tokens on login?
+        - Access tokens provide short-term authentication, while refresh tokens allow users to stay logged in.
+
+        👉 Why do we store tokens in cookies with httpOnly & secure?
+        - httpOnly: Prevents JavaScript-based attacks (e.g., XSS)
+        - secure: Ensures cookies are only sent over HTTPS for security.
+        */
+
+});
+
+
+
+export { 
+    registerUser,
+    loginUser
+}
