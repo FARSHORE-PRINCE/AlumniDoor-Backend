@@ -212,6 +212,8 @@ const loginUser = asyncHandler(async (req, res)=>{
 });
 
 
+
+ // This function logs out the user by removing their refresh token from the database
 const logoutUser = asyncHandler(async (req, res)=>{
 // Algorithm:
     // req -> user info (from authentication middleware)
@@ -220,12 +222,55 @@ const logoutUser = asyncHandler(async (req, res)=>{
     // set cookie options (httpOnly, secure)
     // clear accessToken and refreshToken cookies
     // send success response (User logged Out)
-    
+
+    await User.findByIdAndUpdate(
+        req.user._id,// Find the user by their ID in MongoDB
+        {
+            $unset: {
+                refreshToken: 1 // this removes the field from document
+            }
+        },
+        {
+            new: true, // Ensures the updated document is returned
+        }
+    );
+
+      /*
+    What is findByIdAndUpdate?
+    - This is a MongoDB method (via Mongoose) that finds a document by its `_id` and updates it.
+    - `$unset` removes a field from the document (in this case, refreshToken).
+    - `{ new: true }` ensures we get the updated document after the change.
+    */
+
+    const options = {
+        httpOnly: true, // Ensures cookies can't be accessed via JavaScript (security measure)
+        secure: true // Ensures cookies are only sent over HTTPS
+    }
+
+    return res
+    .status(200)
+    .clearCookie("accessToken", options) // Remove accessToken cookie
+    .clearCookie("refreshToken", options) // Remove refreshToken cookie
+    .json(new ApiResponse(200, { }, "User logged Out"));
+
+      /*
+    Logout Process Notes:
+
+    👉 Why do we unset refreshToken in the database?
+    - This ensures the user can't use an old refresh token to get a new access token after logging out.
+    - Think of it like taking away someone's membership card when they leave the club!
+
+    👉 Why do we clear cookies?
+    - Access & refresh tokens are stored in cookies, so clearing them fully logs the user out.
+    - No tokens = No access = Secure logout!
+
+    */
 });
 
 
 
 export { 
     registerUser,
-    loginUser
+    loginUser,
+    logoutUser
 }
