@@ -5,21 +5,27 @@ const mentorSchema = new Schema(
         mentor:{
             type: mongoose.Schema.Types.ObjectId,
             ref:"User"
-        },
-        hasAvailability:{
+            },
+        isAvailableForMentoring: {
             type: Boolean,
-            default:false
+            default: false,
         },
         skillTags: {
+            type: [String],
+            required: true,
+            trim: true,
+        },
+        currentProfession: {
             type: String,
             required: true,
         },
-        totalStudents: [
-            {
-                type: mongoose.Schema.Types.ObjectId,
-                ref:"Student"
-            }
-        ]
+        mentees: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Student",// Must be a user with role: "STUDENT"
+            //totalStudents
+        },
+        ],
     }, 
     {
         timestamps: true

@@ -10,9 +10,14 @@ const alumniSchema = new Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref:"Transaction"
         },
-        linkedIn: {
-            type: String,
-            required: true,
+        linkedInUrl: {
+        type: String,
+        // required: true,
+        trim: true,
+        },
+        currentProfession: {
+        type: String,
+        // required: true,
         }
     },
     {
