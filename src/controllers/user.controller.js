@@ -391,31 +391,54 @@ const changeCurrentPassword = asyncHandler(async (req, res)=>{
 7. Respond with success message "Password changed successfully".
 */
 
+    // Extract oldPassword and newPassword from the request body
     const {oldPassword, newPassword}= req.body;
 
+    // Find the user in the database using their ID from the authenticated request
     const user = await User.findById(req.user?._id);
+    // Check if the provided old password matches the stored hashed password
     const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
 
     if (!isPasswordCorrect) {
+    // If old password is incorrect, throw an error and prevent update
         throw new ApiError(400, "Invalid old password")
         
     }
 
+    // If old password is correct, update the user's password with the new one
     user.password = newPassword;
+    // Save the updated user object in the database without running validations
     await user.save({validateBeforeSave: false})
 
     return res
     .status(200)
     .json( 
         new ApiResponse(200, {}, "Password changed successfully" )
-    )
+    );
+      /*
+  👉 Why do we check oldPassword first?
+     - To prevent unauthorized password changes. Only the correct old password allows an update.
+  
+  👉 Why do we hash the new password before saving? (Handled in Mongoose pre-save middleware)
+     - Storing plain text passwords is insecure. Hashing ensures better security.
+  
+  👉 Why do we use validateBeforeSave: false?
+     - We skip schema validations (if any) to ensure quick updates.
+  */
 })
 
+const getCurrentUser = asyncHandler(async(req, res)=>{
+// This function gets the current logged-in user's details and sends them in response
+    return res
+    .status(200)
+    .json(new ApiResponse(200, req.user, "User fetched successfully"));
+});
 
 export { 
     registerUser,
     loginUser,
     logoutUser,
     refreshAccessToken,
-    changeCurrentPassword
+    changeCurrentPassword,
+    getCurrentUser
 }
