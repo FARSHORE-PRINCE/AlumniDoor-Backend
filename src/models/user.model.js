@@ -29,11 +29,7 @@ const userSchema = new Schema({
         unique: true,
         trim: true,
     },
-    profilePhoto: {
-        type: String,// use a server [by multer only], not a third party service like Cloudinary url.
-        //required: true,
-
-    },
+   
     degree: {
         type: String,
         required: true,
@@ -44,24 +40,61 @@ const userSchema = new Schema({
         required: true,
 
     },
+
+    profilePhoto: {
+        type: String,// use a server [by multer only], not a third party service like Cloudinary url.
+        required: false,
+        trim: true
+    },
+    
+    gender: {
+        type: String,
+        enum: ["MALE", "FEMALE", "OTHER"],
+        required: false,
+        uppercase: true,
+        trim: true
+    },
+
     currentProfession: {
         type: String,
-        required: true,
-
+        required: function () {
+            // Only required if user is ALUMNI or MENTOR
+            return this.role === "ALUMNI" || this.role === "MENTOR";
+        },
     },
-    linkedIn: {
-        type: String,// linkedIn url
 
+   isMentor: {
+        type: Boolean,
+        default: false,
     },
+
+    skillTags: {
+        type: [String], // Array of tags like ["JavaScript", "Node", "MongoDB"]
+        default: [],
+        trim: true,
+    },
+
+    isAvailableForMentoring: {
+        type: Boolean,
+        default: false,
+    },
+
+    linkedInUrl: {
+        type: String,
+        trim: true,
+    },
+ 
     password: {
         type: String,
         required: [true, "Password is required"],
 
     },
+
     refreshToken:{
         type: String,
     }
-    },
+
+   },
     {
         timestamps: true
     }
