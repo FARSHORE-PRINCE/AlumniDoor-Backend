@@ -2,6 +2,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js"
+import jwt from "jsonwebtoken";
+
 
 const generateAccessAndRefreshTokens = async(userId)=>{
     // Function to generate new access & refresh tokens for a user
@@ -143,7 +145,7 @@ const loginUser = asyncHandler(async (req, res)=>{
     //send cookie
 
     const {email, password} = req.body; // Extract email, username & password from request
-    console.log(email); // Debugging: logs email to see if it was received
+    // console.log("Extracted email:", email); // Debugging: logs email to see if it was received
 
     if (!email) {
     // If email is not provided, throw an error
@@ -159,6 +161,7 @@ const loginUser = asyncHandler(async (req, res)=>{
     
     const isPasswordValid = await user.isPasswordCorrect(password);
      // Check if provided password matches the stored hashed password
+    
 
 
     if (!isPasswordValid) {
@@ -171,6 +174,7 @@ const loginUser = asyncHandler(async (req, res)=>{
 
     const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
     // Fetch user details but exclude sensitive fields (password, refresh token)
+
 
     const options = {
         httpOnly: true,// Prevents JavaScript access to cookies for security or simply users cannot modify the cookies when we set this flag
@@ -222,7 +226,10 @@ const logoutUser = asyncHandler(async (req, res)=>{
     // set cookie options (httpOnly, secure)
     // clear accessToken and refreshToken cookies
     // send success response (User logged Out)
-
+    
+    // console.log("User after logout:", req.user); // Debugging: logs req.user(from auth.middleware.js) to see if it was received 
+    // should work if token was verified
+    
     await User.findByIdAndUpdate(
         req.user._id,// Find the user by their ID in MongoDB
         {
@@ -234,6 +241,7 @@ const logoutUser = asyncHandler(async (req, res)=>{
             new: true, // Ensures the updated document is returned
         }
     );
+    
 
       /*
     What is findByIdAndUpdate?
@@ -268,9 +276,112 @@ const logoutUser = asyncHandler(async (req, res)=>{
 });
 
 
+  // This function helps users stay logged in by refreshing their access token.
+  // It checks if the refresh token is valid, then issues a new access token.
+const refreshAccessToken = asyncHandler(async (req, res)=>{
+// Algorithm:
+   /*
+1. Get refresh token from cookies or body.
+2. If missing, return unauthorized error.
+3. Try to:
+   a. Verify refresh token with secret.
+   b. Decode token and get user ID.
+   c. Find user by ID in database.
+   d. If user not found, return error.
+   e. If token mismatch, return error.
+   f. Generate new access and refresh tokens.
+   g. Set tokens in secure, HTTP-only cookies.
+   h. Return tokens and success message.
+4. Catch errors and return unauthorized error.
+ 
+   */
+
+const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;  // Tries to get refresh token from cookies first, then from request body
+console.log("Incoming refresh token:", incomingRefreshToken);
+
+
+if (!incomingRefreshToken) {
+    // If there's no refresh token, the request is not allowed
+    throw new ApiError(401, "unauthorized request")
+}
+try {
+        // Step 1: Verify the refresh token using JWT (JSON Web Token)
+        const decodeToken = jwt.verify(
+            incomingRefreshToken, 
+            process.env.REFRESH_TOKEN_SECRET // Uses a secret key to check if the token is valid
+        )
+    
+        // Step 2: Find the user in the database using the user ID from the token
+        const user = await User.findById(decodeToken?._id)// Finds user based on ID stored in the refresh token
+    
+        if (!user) {
+        // If no user is found, the token is invalid
+            throw new ApiError(401, "Invalid refresh token")
+        }
+    
+         // Step 3: Check if the refresh token provided matches the one stored in the database
+        if (incomingRefreshToken !== user?.refreshToken) {
+            throw new ApiError(401, "Refresh token is expired or used")
+        }
+    
+        // Step 4: Set options for cookies (security settings)
+        const options = {
+            httpOnly: true,
+            secure: true
+        }
+    
+        // Step 5: Generate new access & refresh tokens for the user
+        const {accessToken, newrefreshToken} = await generateAccessAndRefreshTokens(user._id)
+    
+        return res
+        .status(200)
+        .cookie( "accessToken", accessToken, options)// Stores new access token in secure cookie
+        .cookie("refreshToken", newrefreshToken, options)// Stores new refresh token in secure cookie
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    accessToken,
+                    refreshToken: newrefreshToken
+                },
+                "Access token refreshed"
+            )
+        )
+} catch (error) {
+    throw new ApiError(401, error?.message || "Invalid refresh token"); // Handles token verification errors
+    
+}
+ /*
+        Deep Dive into Refresh Token Flow:
+
+        👉 What’s the purpose of a refresh token?
+        - Access tokens expire quickly for security reasons.
+        - Refresh tokens allow users to stay logged in without re-entering their password.
+
+        👉 Why do we verify the refresh token?
+        - To make sure it was created by our server and hasn’t been tampered with.
+        - Prevents hackers from generating fake tokens.
+
+        👉 Why do we check if the refresh token matches the one in the database?
+        - If a hacker steals an old refresh token, they shouldn’t be able to use it.
+        - Only the latest refresh token should be valid.
+
+        👉 Why do we replace the refresh token every time?
+        - If someone steals the refresh token, it becomes useless after the next login.
+        - This makes our system more secure.
+
+        👉 What happens if a refresh token is missing?
+        - The user is logged out and must log in again.
+        - Prevents unauthorized access when tokens are missing.
+
+*/
+
+});
+
 
 export { 
     registerUser,
     loginUser,
-    logoutUser
+    logoutUser,
+    refreshAccessToken
 }

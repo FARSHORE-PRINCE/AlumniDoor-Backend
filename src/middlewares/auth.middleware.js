@@ -23,10 +23,8 @@ try {
       - If it's in the header, we remove the "Bearer " part to get the actual token.
     */
        const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "")
-       console.log("Extracted Token:", token);
-            
-       //console.log(token);
-    
+      //  console.log("Extracted Token:", token);
+              
        if (!token) {
             throw new ApiError(401, "Unauthorized request")
        }
@@ -39,7 +37,7 @@ try {
     */
     
        const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-       
+      //  console.log("Extracted decodedToken:", decodedToken);
        /*
        Step 3: Fetch User from Database 
       
@@ -67,6 +65,7 @@ try {
     */
 
         req.user = user;
+        
         next();
 } catch (error) {
     /*     
