@@ -297,7 +297,7 @@ const refreshAccessToken = asyncHandler(async (req, res)=>{
    */
 
 const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;  // Tries to get refresh token from cookies first, then from request body
-console.log("Incoming refresh token:", incomingRefreshToken);
+// console.log("Incoming refresh token:", incomingRefreshToken);
 
 
 if (!incomingRefreshToken) {
@@ -379,9 +379,43 @@ try {
 });
 
 
+const changeCurrentPassword = asyncHandler(async (req, res)=>{
+//Algorithm:
+/*
+1. Extract oldPassword and newPassword from request body.
+2. Find user by ID from req.user.
+3. Verify if oldPassword is correct using user.isPasswordCorrect.
+4. If incorrect, throw error "Invalid old password".
+5. Update user's password to newPassword.
+6. Save user without validation.
+7. Respond with success message "Password changed successfully".
+*/
+
+    const {oldPassword, newPassword}= req.body;
+
+    const user = await User.findById(req.user?._id);
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+
+    if (!isPasswordCorrect) {
+        throw new ApiError(400, "Invalid old password")
+        
+    }
+
+    user.password = newPassword;
+    await user.save({validateBeforeSave: false})
+
+    return res
+    .status(200)
+    .json( 
+        new ApiResponse(200, {}, "Password changed successfully" )
+    )
+})
+
+
 export { 
     registerUser,
     loginUser,
     logoutUser,
-    refreshAccessToken
+    refreshAccessToken,
+    changeCurrentPassword
 }
