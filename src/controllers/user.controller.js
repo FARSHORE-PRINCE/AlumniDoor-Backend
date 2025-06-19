@@ -3,6 +3,10 @@ import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js"
 import jwt from "jsonwebtoken";
+import { Student } from "../models/student.model.js";
+import { Mentor } from "../models/mentor.model.js";
+import { Alumni } from "../models/alumni.model.js";
+
 
 
 const generateAccessAndRefreshTokens = async(userId)=>{
@@ -57,36 +61,87 @@ const registerUser = asyncHandler( async (req, res)=> {
   
 
   // Getting user details from the request body (aka what the frontend sends us)
-    const { role, fullName, email, phone, degree, graduationYear, currentProfession, password } = req.body;
-    //Future: linkedIn, profilePhoto
-    // console.log("email: ", email);
-    // console.log("req.body: ", req.body);
-
-    // Checking if any required field is empty
-    // .trim() removes spaces so "   " isn’t counted as valid input
-    if ([role, fullName, email, phone, degree, graduationYear, currentProfession, password].some(field => !field?.toString().trim())) {
-    throw new ApiError(400, "All fields are required.");
-    }
-
-    // Checking if this email is already taken
-   // $or is a MongoDB operator that checks multiple conditions
-    const existedUser= await User.findOne({email: req.body.email })
-    
-    if (existedUser) {
-        throw new ApiError(409, "Email already registered")
-    }
-
-    // Creating a new user in the database
-    const user = await User.create({
+   
+    const {
     role,
     fullName,
     email,
     phone,
     degree,
     graduationYear,
+    password,
+    profilePhoto,
+    gender,
     currentProfession,
-    password 
+    isMentor,
+    skillTags,
+    isAvailableForMentoring,
+    linkedInUrl
+  } = req.body;
+    //Future: linkedIn, profilePhoto
+    // console.log("email: ", email);
+    // console.log("req.body: ", req.body);
+
+    // Checking if any required field is empty
+    // .trim() removes spaces so "   " isn’t counted as valid input
+    // ✅ Required fields validation
+    if ([role, fullName, email, phone, degree, graduationYear, password].some(field => !field?.toString().trim())) {
+        throw new ApiError(400, "Required fields cannot be empty.");
+    }
+
+    // ✅ Role-specific validation
+  if ((role === "MENTOR" || role === "ALUMNI") && !currentProfession?.toString().trim()) {
+    throw new ApiError(400, `${role} must provide current profession`);
+  }
+
+
+    // Checking if this email is already taken
+  const existedUser = await User.findOne({ email });
+  if (existedUser) {
+    throw new ApiError(409, "Email already registered");
+  }
+
+    // Creating a new user in the database
+ // ✅ Create user
+  const user = await User.create({
+    role,
+    fullName,
+    email,
+    phone,
+    degree,
+    graduationYear,
+    password,
+    profilePhoto,
+    gender,
+    currentProfession: (role === "MENTOR" || role === "ALUMNI") ? currentProfession : undefined,
+    isMentor: isMentor || false,
+    skillTags: Array.isArray(skillTags) ? skillTags : [],
+    isAvailableForMentoring: isAvailableForMentoring || false,
+    linkedInUrl
+  });
+
+
+  // ✅ Create role-based sub documents
+  if (role === "STUDENT") {
+    await Student.create({
+      student: user._id,
+      mentors: []
     });
+  } else if (role === "MENTOR") {
+    await Mentor.create({
+      mentor: user._id,
+      students: [],
+      skillTags: user.skillTags,
+      hasAvailability: user.isAvailableForMentoring,
+      currentProfession: user.currentProfession
+    });
+  } else if (role === "ALUMNI") {
+    await Alumni.create({
+      alumni: user._id,
+      totalContribution: null,
+      linkedIn: linkedInUrl
+    });
+  }
 
     // Fetching the newly created user, but without sensitive info (password, refresh token)
    // .select("-password -refreshToken") removes those fields from the returned object
