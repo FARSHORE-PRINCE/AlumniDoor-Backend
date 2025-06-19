@@ -1,35 +1,33 @@
-import mongoose, {Schema} from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
 const mentorSchema = new Schema(
-    {
-        mentor:{
-            type: mongoose.Schema.Types.ObjectId,
-            ref:"User"
-            },
-        isAvailableForMentoring: {
-            type: Boolean,
-            default: false,
-        },
-        skillTags: {
-            type: [String],
-            required: true,
-            trim: true,
-        },
-        currentProfession: {
-            type: String,
-            required: true,
-        },
-        mentees: [
-        {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Student",// Must be a user with role: "STUDENT"
-            //totalStudents
-        },
-        ],
-    }, 
-    {
-        timestamps: true
-    }
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User", // Refers to a User with role: "MENTOR"
+      required: true,
+      unique: true,
+    },
+    isAvailableForMentoring: {
+      type: Boolean,
+      default: false,
+    },
+    skillTags: {
+      type: [String],
+      required: true,
+      default: [], // always add default for array to avoid undefined issues
+      trim: true,
+    },
+    students: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"//r "User" if you're storing students in User
+      },
+    ],
+  },
+  {
+    timestamps: true,
+  }
 );
 
-export const Mentor = mongoose.model('Mentor', mentorSchema);
+export const Mentor = mongoose.model("Mentor", mentorSchema);
