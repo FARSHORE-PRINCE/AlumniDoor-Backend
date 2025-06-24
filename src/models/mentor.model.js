@@ -8,22 +8,29 @@ const mentorSchema = new Schema(
       required: true,
       unique: true,
     },
-    isAvailableForMentoring: {
-      type: Boolean,
-      default: false,
-    },
-    skillTags: {
-      type: [String],
-      required: true,
-      default: [], // always add default for array to avoid undefined issues
-      trim: true,
-    },
-    students: [
+
+      students: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User"//r "User" if you're storing students in User
+        ref: "User"// "User" if you're storing students in User
       },
     ],
+
+    // hasAvailability: {
+    //   type: Boolean,
+    //   default: true,
+    // },
+
+    skillTags: {
+      type: [String],
+      default: [], // always add default for array to avoid undefined issues
+    },
+
+    currentProfession: {
+      type: String,
+      required: true,
+    },
+
   },
   {
     timestamps: true,

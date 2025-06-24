@@ -35,9 +35,11 @@ const userSchema = new Schema({
         required: true,
 
     },
+
     graduationYear: {
-        type: Number,
-        required: true,
+    type: Number,
+    required: true,
+    index: true,
 
     },
 
@@ -61,6 +63,7 @@ const userSchema = new Schema({
             // Only required if user is ALUMNI or MENTOR
             return this.role === "ALUMNI" || this.role === "MENTOR";
         },
+        index: true,
     },
 
    isMentor: {
@@ -69,9 +72,13 @@ const userSchema = new Schema({
     },
 
     skillTags: {
-        type: [String], // Array of tags like ["JavaScript", "Node", "MongoDB"]
-        default: [],
-        trim: true,
+    type: [String],
+    default: [],
+    validate: [
+      (arr) => arr.length <= 3,
+      "Maximum of 3 skill tags allowed",
+    ],
+    index: true,
     },
 
     isAvailableForMentoring: {
@@ -99,6 +106,20 @@ const userSchema = new Schema({
         timestamps: true
     }
 );
+
+userSchema.index({ skillTags: 1 });
+userSchema.index({ currentProfession: 1 });
+userSchema.index({ graduationYear: 1 });
+
+/*
+Why Use These Indexes?
+Indexes make queries faster, especially on large collections. Without indexes, MongoDB must scan every document to find matches (a "collection scan"). Indexes turn this into a much faster operation.
+
+Typical use-cases:
+-Searching/filtering users by skills, profession, or graduation year.
+-Sorting users by these fields.
+
+*/
 
 userSchema.pre("save", async function (next) {
     // Mongoose middleware (pre-save hook) runs before saving a user to the database
