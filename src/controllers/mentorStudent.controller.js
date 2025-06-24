@@ -4,7 +4,22 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
-// STUDENT subscribes to MENTOR
+
+/*
+🔁 1. subscribeToMentor
+What it does: Allows a STUDENT to subscribe to a MENTOR.
+
+✅ Checks that only a STUDENT can subscribe
+
+✅ Ensures a Student document exists; if not, creates it
+
+✅ Adds the mentorId to the student’s mentors array ($addToSet avoids duplicates)
+
+✅ Adds the student to the mentor’s students array
+
+✅ Returns the updated student with populated mentor info
+
+*/
 const subscribeToMentor = asyncHandler(async (req, res) => {
   const studentId = req.user._id;
   const { mentorId } = req.body;
@@ -32,14 +47,26 @@ const subscribeToMentor = asyncHandler(async (req, res) => {
     { $addToSet: { students: studentId } }
   );
 
-  return res
+  returnres
     .status(200)
     .json(
       new ApiResponse(200, updatedStudent, "Mentor subscribed successfully")
     );
 });
 
-// STUDENT unsubscribes from MENTOR
+/*
+🔄 2. unsubscribeMentor
+What it does: Allows a STUDENT to unsubscribe from a mentor.
+
+✅ Only STUDENT role is allowed
+
+✅ Uses $pull to remove mentorId from student’s mentors
+
+✅ Also removes the student from the mentor’s students array
+
+📝 (Optional): You could auto-delete the mentor document if no students are left, but it’s commented out
+
+*/
 const unsubscribeMentor = asyncHandler(async (req, res) => {
   const studentId = req.user._id;
   const { mentorId } = req.body;
@@ -65,7 +92,16 @@ const unsubscribeMentor = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, null, "Mentor unsubscribed"));
 });
 
-// MENTOR unsubscribes a STUDENT
+/*
+🔄 3. unsubscribeStudent
+What it does: Allows a MENTOR to remove a specific student from their list.
+
+✅ Only MENTOR role is allowed
+
+✅ Removes studentId from mentor’s students
+
+✅ Also removes mentor from student’s mentors
+*/
 const unsubscribeStudent = asyncHandler(async (req, res) => {
   const mentorId = req.user._id;
   const { studentId } = req.body;
@@ -91,7 +127,13 @@ const unsubscribeStudent = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, null, "Student unsubscribed"));
 });
 
-// Get mentor count for logged-in STUDENT
+/*
+🔢 4. getMyMentorCount
+What it does: Lets a logged-in STUDENT see how many mentors they have.
+
+Finds the student's mentor list length
+Returns the count
+*/
 const getMyMentorCount = asyncHandler(async (req, res) => {
   const student = await Student.findOne({ user: req.user._id });
   const count = student?.mentors?.length || 0;
@@ -101,7 +143,14 @@ const getMyMentorCount = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, count, "Your mentor count"));
 });
 
-// Get student count for logged-in MENTOR
+/*
+🔢 5. getMyStudentCount
+What it does: Lets a logged-in MENTOR see how many students they have.
+
+Finds the mentor’s student list length
+
+Returns the count
+*/
 const getMyStudentCount = asyncHandler(async (req, res) => {
   const mentor = await Mentor.findOne({ user: req.user._id });
   const count = mentor?.students?.length || 0;
