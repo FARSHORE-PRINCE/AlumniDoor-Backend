@@ -103,7 +103,7 @@ const registerUser = asyncHandler( async (req, res)=> {
 
     // Creating a new user in the database
  // ✅ Create user
-  const user = await User.create({
+  const userData = {
     role,
     fullName,
     email,
@@ -113,13 +113,18 @@ const registerUser = asyncHandler( async (req, res)=> {
     password,
     profilePhoto,
     gender,
-    currentProfession: (role === "MENTOR" || role === "ALUMNI") ? currentProfession : undefined,
     isMentor: isMentor || false,
     skillTags: Array.isArray(skillTags) ? skillTags : [],
     isAvailableForMentoring: isAvailableForMentoring || false,
-    linkedInUrl
-  });
+  };
 
+  if (role === "MENTOR" || role === "ALUMNI") {
+    userData.currentProfession = currentProfession?.trim();
+    userData.linkedInUrl = linkedInUrl?.trim();
+  }
+
+  // ✅ Create user
+  const user = await User.create(userData);
 
   // ✅ Create role-based sub documents
   if (role === "STUDENT") {

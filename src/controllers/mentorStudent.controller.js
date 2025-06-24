@@ -32,7 +32,7 @@ const subscribeToMentor = asyncHandler(async (req, res) => {
     { $addToSet: { students: studentId } }
   );
 
-  res
+  return res
     .status(200)
     .json(
       new ApiResponse(200, updatedStudent, "Mentor subscribed successfully")
@@ -60,7 +60,7 @@ const unsubscribeMentor = asyncHandler(async (req, res) => {
 
   // ❗ Finally, delete the mentor document if needed
 //   await Mentor.findOneAndDelete({ user: mentorId });
-  res
+  return res
     .status(200)
     .json(new ApiResponse(200, null, "Mentor unsubscribed"));
 });
@@ -86,7 +86,7 @@ const unsubscribeStudent = asyncHandler(async (req, res) => {
 
   // ❗ Finally, delete the student document if needed
 //   await Student.findOneAndDelete({ user: studentId });
-  res
+  return res
     .status(200)
     .json(new ApiResponse(200, null, "Student unsubscribed"));
 });
@@ -96,7 +96,7 @@ const getMyMentorCount = asyncHandler(async (req, res) => {
   const student = await Student.findOne({ user: req.user._id });
   const count = student?.mentors?.length || 0;
 
-  res
+  return res
     .status(200)
     .json(new ApiResponse(200, count, "Your mentor count"));
 });
@@ -106,7 +106,7 @@ const getMyStudentCount = asyncHandler(async (req, res) => {
   const mentor = await Mentor.findOne({ user: req.user._id });
   const count = mentor?.students?.length || 0;
 
-  res
+  return res
     .status(200)
     .json(new ApiResponse(200, count, "Your student count"));
 });

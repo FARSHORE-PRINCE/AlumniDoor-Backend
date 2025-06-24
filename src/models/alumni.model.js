@@ -12,12 +12,10 @@ const alumniSchema = new Schema(
         },
         linkedInUrl: {
         type: String,
-        required: true,
         trim: true,
         },
         currentProfession: {
         type: String,
-        required: true,
         }
     },
     {

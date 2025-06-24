@@ -59,10 +59,10 @@ const userSchema = new Schema({
 
     currentProfession: {
         type: String,
-        required: function () {
-            // Only required if user is ALUMNI or MENTOR
-            return this.role === "ALUMNI" || this.role === "MENTOR";
-        },
+        // required: function () {
+        //     // Only required if user is ALUMNI or MENTOR
+        //     return this.role === "ALUMNI" || this.role === "MENTOR";
+        // },
         index: true,
     },
 
@@ -107,19 +107,7 @@ const userSchema = new Schema({
     }
 );
 
-userSchema.index({ skillTags: 1 });
-userSchema.index({ currentProfession: 1 });
-userSchema.index({ graduationYear: 1 });
 
-/*
-Why Use These Indexes?
-Indexes make queries faster, especially on large collections. Without indexes, MongoDB must scan every document to find matches (a "collection scan"). Indexes turn this into a much faster operation.
-
-Typical use-cases:
--Searching/filtering users by skills, profession, or graduation year.
--Sorting users by these fields.
-
-*/
 
 userSchema.pre("save", async function (next) {
     // Mongoose middleware (pre-save hook) runs before saving a user to the database
@@ -185,5 +173,19 @@ userSchema.pre("save", async function (next) {
      - To keep it minimal and reduce exposure of user info.
      
   */
+
+// Custom validation for ALUMNI and MENTOR roles
+userSchema.pre("validate", function (next) {
+  if (this.role === "ALUMNI" || this.role === "MENTOR") {
+    if (!this.currentProfession) {
+      this.invalidate("currentProfession", "`currentProfession` is required for ALUMNI or MENTOR");
+    }
+    if (!this.linkedInUrl) {
+      this.invalidate("linkedInUrl", "`linkedInUrl` is required for ALUMNI or MENTOR");
+    }
+  }
+  next();
+});
+
 
 export const User = mongoose.model("User", userSchema);

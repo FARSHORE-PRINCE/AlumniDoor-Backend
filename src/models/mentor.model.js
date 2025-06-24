@@ -5,7 +5,6 @@ const mentorSchema = new Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User", // Refers to a User with role: "MENTOR"
-      required: true,
       unique: true,
     },
 

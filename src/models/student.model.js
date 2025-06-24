@@ -5,7 +5,6 @@ const studentSchema = new Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User", // Reference to the user document with role: "STUDENT"
-      required: true,
       unique: true,
     },
     mentors: [
