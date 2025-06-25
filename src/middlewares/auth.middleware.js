@@ -12,6 +12,12 @@ import jwt from "jsonwebtoken";
   - If the token is missing or invalid, it throws an error.
 */
 
+/*
+  Middleware to verify JWT access token and attach user info to req.user
+  - Fast: avoids DB call unless needed
+  - Secure: fails on invalid/missing tokens
+*/
+
 export const verifyJWT = asyncHandler(async (req, _, next)=>{
   
 try {
@@ -63,7 +69,7 @@ try {
             - This makes the authenticated user available to all following middleware & route handlers
             - Example: If a protected route wants to know who is logged in, it can simply access `req.user`
     */
-
+      // Directly use payload (includes _id, email, fullName, role, etc.)
         req.user = user;
         
         next();
