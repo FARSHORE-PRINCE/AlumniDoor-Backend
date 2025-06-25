@@ -494,11 +494,81 @@ const getCurrentUser = asyncHandler(async(req, res)=>{
     .json(new ApiResponse(200, req.user, "User fetched successfully"));
 });
 
+
+
+const updateUserRole = asyncHandler(async (req, res) => {
+  const { newRole } = req.body;
+
+  if (!["STUDENT", "MENTOR", "ALUMNI"].includes(newRole)) {
+    throw new ApiError(400, "Invalid role provided");
+  }
+
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  // Optional: prevent changing to the same role
+  if (user.role === newRole) {
+    throw new ApiError(400, "You are already in this role");
+  }
+
+  user.role = newRole;
+   await user.save({ validateBeforeSave: false });
+
+
+  return res.status(200).json(
+    new ApiResponse(200, { role: user.role }, "Role updated successfully")
+  );
+});
+
+
+const updateUserByRoleFields = asyncHandler(async (req, res) => {
+  const { currentProfession, linkedInUrl, skillTags } = req.body;
+
+  const user = await User.findById(req.user?._id);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const updateData = {};
+
+  // Add currentProfession and linkedInUrl if role is ALUMNI or MENTOR
+  if (["MENTOR", "ALUMNI"].includes(user.role)) {
+    if (!currentProfession?.trim() || !linkedInUrl?.trim()) {
+      throw new ApiError(400, `${user.role} must provide current profession and LinkedIn URL`);
+    }
+    updateData.currentProfession = currentProfession.trim();
+    updateData.linkedInUrl = linkedInUrl.trim();
+  }
+
+  // Add skillTags only if role is MENTOR
+  if (user.role === "MENTOR") {
+    if (!Array.isArray(skillTags) || skillTags.length > 3) {
+      throw new ApiError(400, "Mentor can have a maximum of 3 skill tags");
+    }
+    updateData.skillTags = skillTags;
+  }
+
+const updatedUser = await User.findByIdAndUpdate(
+  req.user._id,
+  { $set: updateData },
+  { new: true }
+).select("-password");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatedUser, "User role-based fields updated successfully"));
+});
+
+
 export { 
     registerUser,
     loginUser,
     logoutUser,
     refreshAccessToken,
     changeCurrentPassword,
-    getCurrentUser
+    getCurrentUser,
+    updateUserRole,
+    updateUserByRoleFields
 }
