@@ -66,11 +66,6 @@ const userSchema = new Schema({
         index: true,
     },
 
-   isMentor: {
-        type: Boolean,
-        default: false,
-    },
-
     skillTags: {
     type: [String],
     default: [],
@@ -79,11 +74,6 @@ const userSchema = new Schema({
       "Maximum of 3 skill tags allowed",
     ],
     index: true,
-    },
-
-    isAvailableForMentoring: {
-        type: Boolean,
-        default: false,
     },
 
     linkedInUrl: {

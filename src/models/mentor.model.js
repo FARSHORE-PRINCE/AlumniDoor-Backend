@@ -15,11 +15,6 @@ const mentorSchema = new Schema(
       },
     ],
 
-    // hasAvailability: {
-    //   type: Boolean,
-    //   default: true,
-    // },
-
     skillTags: {
       type: [String],
       default: [], // always add default for array to avoid undefined issues
