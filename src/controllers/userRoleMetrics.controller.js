@@ -47,7 +47,7 @@ const subscribeToMentor = asyncHandler(async (req, res) => {
     { $addToSet: { students: studentId } }
   );
 
-  returnres
+  return res
     .status(200)
     .json(
       new ApiResponse(200, updatedStudent, "Mentor subscribed successfully")

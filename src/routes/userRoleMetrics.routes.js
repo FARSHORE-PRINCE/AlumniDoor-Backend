@@ -6,7 +6,7 @@ import{
     unsubscribeStudent,
     getMyMentorCount,
     getMyStudentCount
-} from "../controllers/mentorStudent.controller.js";
+} from "../controllers/userRoleMetrics.controller.js";
 
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { authorizeRoles } from "../middlewares/role.middleware.js";
